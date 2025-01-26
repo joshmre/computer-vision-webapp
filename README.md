@@ -37,7 +37,6 @@ ___
 
 3. **Class Filtering:**
    - Implements selective detection focusing on recyclable items
-   - Filters out irrelevant object classes (e.g., "person", "car")
    - Customizable class list for specific recycling needs
 
 
