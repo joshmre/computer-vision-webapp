@@ -33,7 +33,7 @@ function App() {
       setIsRunning(!isRunning);
       // Set the status message when starting
       if (!isRunning) {
-        setStatusMessage('Status: Success! Please check your console for camera.');
+        setStatusMessage('Status: Success! Please check your console for camera. Show item to camera to classify.');
       } else {
         setStatusMessage(''); // Clear message when stopping
       }
@@ -68,7 +68,7 @@ function App() {
               </button>
               {statusMessage && (
                 <div className="status-message">
-                  {"Please check console for camera."}
+                  {"Please check console for camera. Show item to camera to classify!"}
                 </div>
               )}
               <p>Status: {status}</p>
