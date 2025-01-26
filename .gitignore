@@ -1,0 +1,6 @@
+# Create and edit .gitignore
+node_modules/
+.env
+.DS_Store
+build/
+*.log
