@@ -2,38 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
+  const [isLoading, setIsLoading] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState('stopped');
-  const [selectedImage, setSelectedImage] = useState(null);
-
-  const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    setSelectedImage(file);
-  };
-  const handleImageUpload = async () => {
-    if (!selectedImage) {
-      console.error('No image selected');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('image', selectedImage);
-
-    try {
-      const response = await fetch('XXXXXXXXXXXXXXXXXXXXXXXXXXXX', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        console.log('Image uploaded successfully');
-      } else {
-        console.error('Image upload failed');
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    }
-  };
+  
   useEffect(() => {
     checkStatus();
   }, []);
@@ -49,6 +21,7 @@ function App() {
   };
 
   const handleToggle = async () => {
+    setIsLoading(true);
     try {
       const endpoint = isRunning ? '/stop' : '/start';
       const response = await fetch(`http://localhost:5000${endpoint}`, {
@@ -59,6 +32,8 @@ function App() {
       setIsRunning(!isRunning);
     } catch (error) {
       console.error('Error toggling detection:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -69,35 +44,52 @@ function App() {
           <h1>Recyclable Object Detection</h1>
           <button 
             className={`toggle-button ${isRunning ? 'running' : 'stopped'}`}
+            disabled={isLoading}
             onClick={handleToggle}
           >
-            {isRunning ? 'Stop Detection' : 'Start Detection'}
+            {isLoading ? (
+              <>
+                {isRunning ? 'Stopping...' : 'Starting...'}
+                <div className="spinner" />
+              </>
+            ) : (
+              isRunning ? 'Stop Detection' : 'Start Detection'
+            )}
           </button>
           <p>Status: {status}</p>
         </div>
-        <div className="upload-image">
-          <h1>Image Upload Detection</h1>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            style={{ display: 'none' }}
-            id="image-input"
-          />
-          <label htmlFor="image-input">
-            <button
-              type="button"
-              onClick={() => document.getElementById('image-input').click()}
-            >
-              Select Image
-            </button>
-          </label>
-          {selectedImage && (
-            <div>
-              <p>Selected file: {selectedImage.name}</p>
-              <button onClick={handleImageUpload}>Upload and Detect</button>
+        <hr className="divider" />
+        <div className="waste-guide">
+          <h2>Waste Disposal Guide</h2>
+          <div className="waste-categories">
+            <div className="waste-category">
+              <h3>Recyclable Materials</h3>
+              <ul>
+                <li>Paper and Cardboard</li>
+                <li>Glass Bottles and Jars</li>
+                <li>Plastic Containers (Types 1-7)</li>
+                <li>Metal Cans and Aluminum</li>
+              </ul>
             </div>
-          )}
+            <div className="waste-category">
+              <h3>Organic Waste</h3>
+              <ul>
+                <li>Food Scraps</li>
+                <li>Garden Waste</li>
+                <li>Coffee Grounds</li>
+                <li>Biodegradable Materials</li>
+              </ul>
+            </div>
+            <div className="waste-category">
+              <h3>Tips for Proper Recycling</h3>
+              <ul>
+                <li>Rinse containers before recycling</li>
+                <li>Remove caps and lids</li>
+                <li>Flatten cardboard boxes</li>
+                <li>Check local recycling guidelines</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </header>
     </div>

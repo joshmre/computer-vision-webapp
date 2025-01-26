@@ -1,64 +1,62 @@
+from flask import Flask, Response, jsonify
 from ultralytics import YOLO
 import cv2
 import numpy as np
 
-def main():
-    # Load the pre-trained YOLOv8 model
-    model = YOLO('yolov8s.pt')  # you can use 'yolov8s.pt' or 'yolov8m.pt' for better accuracy
-    
-    # Define recyclable items from COCO dataset
-    recyclable_items = [
-        'bottle', 'cup', 'wine glass', 'tin can', 'paper', 
-        'cardboard', 'book', 'newspaper', 'magazine'
-    ]
+app = Flask(__name__)
 
+# Initialize your model and variables at the global level
+model = YOLO('yolov8s.pt')
+recyclable_items = [
+    'bottle', 'cup', 'wine glass', 'tin can', 'paper', 
+    'cardboard', 'book', 'newspaper', 'magazine'
+]
+
+def process_frame():
     camera = cv2.VideoCapture(0)
-    
     if not camera.isOpened():
-        print("Error: Could not open camera.")
-        exit()
+        return {"error": "Could not open camera"}
 
-    while True:
-        success, image = camera.read()
-        if not success:
-            break
+    success, image = camera.read()
+    if not success:
+        return {"error": "Could not read frame"}
 
-        # Run object detection
-        results = model(image)
-        
-        # Process detections
-        for result in results:
-            boxes = result.boxes
-            for box in boxes:
-                # Get box coordinates
-                x1, y1, x2, y2 = box.xyxy[0]
-                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                
-                # Get class name
-                class_name = result.names[int(box.cls[0])]
-                conf = float(box.conf[0])
-                
-                # Check if detected object is recyclable
-                if class_name in recyclable_items and conf > 0.5:
-                    # Draw green box for recyclable items
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    label = f"Recyclable: {class_name} ({conf:.2f})"
-                    cv2.putText(image, label, (x1, y1-10), 
-                              cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                else:
-                    # Draw red box for non-recyclable items
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                    label = f"Non-recyclable: {class_name} ({conf:.2f})"
-                    cv2.putText(image, label, (x1, y1-10), 
-                              cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
-        cv2.imshow('Recyclable Object Detection', image)
-        
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    # Run object detection
+    results = model(image)
+    detected_items = []
+    
+    # Process detections
+    for result in results:
+        boxes = result.boxes
+        for box in boxes:
+            class_name = result.names[int(box.cls[0])]
+            conf = float(box.conf[0])
+            
+            if class_name != 'person' and conf > 0.5:
+                detected_items.append({
+                    "class": class_name,
+                    "confidence": conf,
+                    "recyclable": class_name in recyclable_items
+                })
 
     camera.release()
-    cv2.destroyAllWindows()
+    return {"detected_items": detected_items}
+
+@app.route('/api/detect', methods=['GET'])
+def detect():
+    print("Processing detection request")  # Debug print
+    try:
+        results = process_frame()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Error in detection: {e}")  # Debug print
+        return jsonify({"error": str(e)})
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    print("Ping received")  # Debug print
+    return jsonify({"status": "alive"})
 
 if __name__ == "__main__":
-    main()
+    print("Starting Flask server...")  # Debug print
+    app.run(debug=True, port=5000)

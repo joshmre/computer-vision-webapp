@@ -51,6 +51,9 @@ class RecycleDetector:
                     class_name = result.names[int(box.cls[0])]
                     conf = float(box.conf[0])
                     
+                    if class_name == 'person':
+                        continue
+                    
                     if class_name in self.recyclable_items and conf > 0.5:
                         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                         label = f"Recyclable: {class_name} ({conf:.2f})"
